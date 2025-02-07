@@ -28,8 +28,10 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.termpilot.yaml)")
-	rootCmd.PersistentFlags().String("model", "gpt-4o-mini", "model to use")
+	rootCmd.PersistentFlags().String("model", "llama3.2", "model to use")
 	viper.BindPFlag("model", rootCmd.PersistentFlags().Lookup("model"))
+
+	rootCmd.AddCommand(chatCmd)
 }
 
 func initConfig() {
