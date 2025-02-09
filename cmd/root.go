@@ -29,7 +29,14 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.termpilot.yaml)")
 	rootCmd.PersistentFlags().String("model", "llama3.2", "model to use")
+	rootCmd.PersistentFlags().String("base-url", "http://localhost", "base url")
+	rootCmd.PersistentFlags().String("port", "11434", "port")
+	rootCmd.PersistentFlags().String("version", "v1", "version")
+
 	viper.BindPFlag("model", rootCmd.PersistentFlags().Lookup("model"))
+	viper.BindPFlag("base-url", rootCmd.PersistentFlags().Lookup("base-url"))
+	viper.BindPFlag("port", rootCmd.PersistentFlags().Lookup("port"))
+	viper.BindPFlag("version", rootCmd.PersistentFlags().Lookup("version"))
 
 	rootCmd.AddCommand(chatCmd)
 }
