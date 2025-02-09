@@ -55,3 +55,11 @@ func DeleteConversation(id string) error {
 	}
 	return nil
 }
+
+func GetLastConversation() (*models.Conversation, error) {
+	var conversation models.Conversation
+	if err := DB.Order("created_at DESC").Preload("Messages").First(&conversation).Error; err != nil {
+		return nil, err
+	}
+	return &conversation, nil
+}

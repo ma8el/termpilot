@@ -17,7 +17,7 @@ import (
 func init() {
 	chatCmd.Flags().Bool("list", false, "list all conversations")
 	chatCmd.Flags().String("continue", "", "continue a conversation")
-	chatCmd.Flags().String("continue-last", "", "continue the last conversation")
+	chatCmd.Flags().Bool("continue-last", false, "continue the last conversation")
 }
 
 func listConversations() {
@@ -76,6 +76,48 @@ var chatCmd = &cobra.Command{
 
 			if len(conversation.Messages) == 0 {
 				log.Fatalf("Conversation has no messages")
+			}
+
+			var messages []ollamaclient.Message
+
+			for _, message := range conversation.Messages {
+				messages = append(messages, ollamaclient.Message{
+					Role:    message.Role,
+					Content: message.Content,
+				})
+			}
+
+			prompt := strings.Join(args, " ")
+
+			ollamaClient := ollamaclient.NewOllamaClient(baseUrl, model, port, version)
+			response, err := ollamaClient.ChatCompletion(prompt, messages)
+			if err != nil {
+				log.Fatalf("Failed to get response: %v", err)
+			}
+
+			conversation.Messages = append(conversation.Messages, models.Message{Content: prompt, Role: "user"})
+			conversation.Messages = append(conversation.Messages, models.Message{Content: response, Role: "assistant"})
+
+			db.UpdateConversation(*conversation)
+
+			fmt.Println(response)
+			return
+		}
+
+		continueLast, err := cmd.Flags().GetBool("continue-last")
+		if err != nil {
+			log.Fatalf("Failed to get continue-last: %v", err)
+		}
+
+		if continueLast {
+			conversationId, err := db.GetLastConversation()
+			if err != nil {
+				log.Fatalf("Failed to get conversation: %v", err)
+			}
+
+			conversation, err := db.GetConversation(conversationId.ID)
+			if err != nil {
+				log.Fatalf("Failed to get conversation: %v", err)
 			}
 
 			var messages []ollamaclient.Message
