@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"termpilot/ollamaclient"
 
@@ -14,12 +15,30 @@ var chatCmd = &cobra.Command{
 	Short: "Chat with Termpilot",
 	Run: func(cmd *cobra.Command, args []string) {
 		model, err := cmd.Flags().GetString("model")
+
 		if err != nil {
 			log.Fatalf("Failed to get model: %v", err)
 		}
 
-		ollamaClient := ollamaclient.NewOllamaClient("http://localhost", model, "11434", "v1")
-		response, err := ollamaClient.ChatCompletion("Hello, how are you?")
+		baseUrl, err := cmd.Flags().GetString("base-url")
+		if err != nil {
+			log.Fatalf("Failed to get base-url: %v", err)
+		}
+
+		port, err := cmd.Flags().GetString("port")
+		if err != nil {
+			log.Fatalf("Failed to get port: %v", err)
+		}
+
+		version, err := cmd.Flags().GetString("version")
+		if err != nil {
+			log.Fatalf("Failed to get version: %v", err)
+		}
+
+		prompt := strings.Join(args, " ")
+
+		ollamaClient := ollamaclient.NewOllamaClient(baseUrl, model, port, version)
+		response, err := ollamaClient.ChatCompletion(prompt)
 		if err != nil {
 			log.Fatalf("Failed to get response: %v", err)
 		}
