@@ -3,11 +3,11 @@ package models
 import "time"
 
 type Conversation struct {
-	ID        uint `gorm:"primaryKey"`
+	ID        string `gorm:"primaryKey"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Title     string
-	Messages  []Message
+	Messages  []Message `gorm:"foreignKey:ConversationID"`
 }
 
 type Message struct {
@@ -16,5 +16,6 @@ type Message struct {
 	UpdatedAt      time.Time
 	Content        string
 	Role           string
-	ConversationID Conversation `gorm:"foreignKey:ID"`
+	ConversationID string       `gorm:"index"`
+	Conversation   Conversation `gorm:"foreignKey:ConversationID;references:ID"`
 }

@@ -43,17 +43,15 @@ func NewOllamaClient(baseURL string, model string, port string, version string) 
 	}
 }
 
-func (c *OllamaClient) ChatCompletion(prompt string) (string, error) {
+func (c *OllamaClient) ChatCompletion(prompt string, messages []Message) (string, error) {
 	url := fmt.Sprintf("%s:%s/%s/chat/completions", c.BaseURL, c.Port, c.Version)
 
 	requestBody := map[string]interface{}{
 		"model": c.Model,
-		"messages": []Message{
-			{
-				Role:    "user",
-				Content: prompt,
-			},
-		},
+		"messages": append(messages, Message{
+			Role:    "user",
+			Content: prompt,
+		}),
 	}
 
 	jsonData, err := json.Marshal(requestBody)

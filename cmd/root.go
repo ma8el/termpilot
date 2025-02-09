@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"termpilot/db"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -14,6 +15,11 @@ var (
 	rootCmd = &cobra.Command{
 		Use:   "termpilot",
 		Short: "Termpilot is a terminal based AI agent",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			if err := db.InitDB(); err != nil {
+				log.Fatalf("Failed to initialize database: %v", err)
+			}
+		},
 	}
 )
 
