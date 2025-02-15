@@ -11,6 +11,7 @@ import (
 	"termpilot/models"
 	"termpilot/ollamaclient"
 
+	"github.com/charmbracelet/glamour"
 	"github.com/spf13/cobra"
 )
 
@@ -21,12 +22,30 @@ func init() {
 	chatCmd.Flags().Bool("list-models", false, "list all models")
 }
 
+func fancyPrint(text string) string {
+	renderer, err := glamour.NewTermRenderer(
+		glamour.WithAutoStyle(),
+	)
+	if err != nil {
+		return text
+	}
+	out, err := renderer.Render(text)
+	if err != nil {
+		return text
+	}
+	return out
+}
+
 func listConversations() {
 	conversations, err := db.GetAllConversations()
 	if err != nil {
 		log.Fatalf("Failed to list conversations: %v", err)
 	}
-	fmt.Println(conversations)
+	numberOfConversations := len(conversations)
+	fmt.Println("Conversations (", numberOfConversations, "):")
+	for _, conversation := range conversations {
+		fmt.Println(conversation.ID, conversation.Title)
+	}
 }
 
 func continueConversation(conversationId string, args []string, ollamaClient *ollamaclient.OllamaClient) {
@@ -60,7 +79,7 @@ func continueConversation(conversationId string, args []string, ollamaClient *ol
 
 	db.UpdateConversation(*conversation)
 
-	fmt.Println(response)
+	fmt.Print(fancyPrint(response))
 }
 
 func startConversation(args []string, ollamaClient *ollamaclient.OllamaClient) {
@@ -76,7 +95,7 @@ func startConversation(args []string, ollamaClient *ollamaclient.OllamaClient) {
 		Messages: []models.Message{{Content: prompt, Role: "user"}, {Content: response, Role: "assistant"}},
 	})
 
-	fmt.Println(response)
+	fmt.Print(fancyPrint(response))
 }
 
 var chatCmd = &cobra.Command{
