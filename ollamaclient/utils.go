@@ -7,7 +7,6 @@ import (
 	"time"
 )
 
-// IsOllamaRunning checks if the Ollama server is running and accessible
 func IsOllamaRunning(baseURL string, port string) bool {
 	url := fmt.Sprintf("%s:%s/", baseURL, port)
 	client := http.Client{
