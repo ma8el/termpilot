@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 	"time"
+	"unicode"
 
 	"termpilot/db"
 	"termpilot/models"
@@ -20,6 +21,7 @@ func init() {
 	chatCmd.Flags().String("continue", "", "continue a conversation")
 	chatCmd.Flags().Bool("continue-last", false, "continue the last conversation")
 	chatCmd.Flags().Bool("list-models", false, "list all models")
+	chatCmd.Flags().String("show", "", "show a conversation")
 }
 
 func fancyPrint(text string) string {
@@ -45,6 +47,20 @@ func listConversations() {
 	fmt.Println("Conversations (", numberOfConversations, "):")
 	for _, conversation := range conversations {
 		fmt.Println(conversation.ID, conversation.Title)
+	}
+}
+
+func showConversation(conversationId string) {
+	conversation, err := db.GetConversation(conversationId)
+	if err != nil {
+		log.Fatalf("Failed to get conversation: %v", err)
+	}
+	fmt.Print(fancyPrint("# " + conversation.ID + " - " + conversation.Title + "\n"))
+	for _, message := range conversation.Messages {
+		role := []rune(message.Role)
+		role[0] = unicode.ToUpper(role[0])
+		fmt.Print(fancyPrint("## " + string(role) + ":"))
+		fmt.Print(fancyPrint(message.Content))
 	}
 }
 
@@ -175,6 +191,16 @@ var chatCmd = &cobra.Command{
 			}
 
 			continueConversation(conversation.ID, args, ollamaClient)
+			return
+		}
+
+		showConversationId, err := cmd.Flags().GetString("show")
+		if err != nil {
+			log.Fatalf("Failed to get show: %v", err)
+		}
+
+		if showConversationId != "" {
+			showConversation(showConversationId)
 			return
 		}
 
