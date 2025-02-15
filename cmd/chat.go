@@ -82,12 +82,6 @@ var chatCmd = &cobra.Command{
 	Use:   "chat",
 	Short: "Chat with Termpilot",
 	Run: func(cmd *cobra.Command, args []string) {
-		model, err := cmd.Flags().GetString("model")
-
-		if err != nil {
-			log.Fatalf("Failed to get model: %v", err)
-		}
-
 		baseUrl, err := cmd.Flags().GetString("base-url")
 		if err != nil {
 			log.Fatalf("Failed to get base-url: %v", err)
@@ -98,9 +92,18 @@ var chatCmd = &cobra.Command{
 			log.Fatalf("Failed to get port: %v", err)
 		}
 
+		model, err := cmd.Flags().GetString("model")
+		if err != nil {
+			log.Fatalf("Failed to get model: %v", err)
+		}
+
 		version, err := cmd.Flags().GetString("version")
 		if err != nil {
 			log.Fatalf("Failed to get version: %v", err)
+		}
+
+		if err := ollamaclient.StartOllamaIfNotRunning(); err != nil {
+			log.Fatalf("Failed to start ollama: %v", err)
 		}
 
 		list, err := cmd.Flags().GetBool("list")
