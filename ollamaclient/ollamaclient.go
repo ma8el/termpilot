@@ -27,6 +27,16 @@ type OllamaResponse struct {
 	} `json:"choices"`
 }
 
+type OllamaModelResponse struct {
+	Object string `json:"object"`
+	Data   []struct {
+		ID      string `json:"id"`
+		Object  string `json:"object"`
+		OwnedBy string `json:"owned_by"`
+		Created int    `json:"created"`
+	} `json:"data"`
+}
+
 type OllamaClient struct {
 	BaseURL string
 	Port    string
@@ -89,4 +99,33 @@ func (c *OllamaClient) ChatCompletion(prompt string, messages []Message) (string
 	}
 
 	return ollamaResponse.Choices[0].Message.Content, nil
+}
+
+func (c *OllamaClient) ListModels() ([]string, error) {
+	url := fmt.Sprintf("%s:%s/%s/models", c.BaseURL, c.Port, c.Version)
+
+	response, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	defer response.Body.Close()
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var models OllamaModelResponse
+	err = json.Unmarshal(body, &models)
+	if err != nil {
+		return nil, err
+	}
+
+	var modelNames []string
+	for _, model := range models.Data {
+		modelNames = append(modelNames, model.ID)
+	}
+
+	return modelNames, nil
 }

@@ -18,6 +18,7 @@ func init() {
 	chatCmd.Flags().Bool("list", false, "list all conversations")
 	chatCmd.Flags().String("continue", "", "continue a conversation")
 	chatCmd.Flags().Bool("continue-last", false, "continue the last conversation")
+	chatCmd.Flags().Bool("list-models", false, "list all models")
 }
 
 func listConversations() {
@@ -117,6 +118,20 @@ var chatCmd = &cobra.Command{
 		}
 
 		ollamaClient := ollamaclient.NewOllamaClient(baseUrl, model, port, version)
+
+		listModels, err := cmd.Flags().GetBool("list-models")
+		if err != nil {
+			log.Fatalf("Failed to get list-models: %v", err)
+		}
+
+		if listModels {
+			models, err := ollamaClient.ListModels()
+			if err != nil {
+				log.Fatalf("Failed to list models: %v", err)
+			}
+			fmt.Println(models)
+			return
+		}
 
 		conversationId, err := cmd.Flags().GetString("continue")
 		if err != nil {
