@@ -28,6 +28,56 @@ func listConversations() {
 	fmt.Println(conversations)
 }
 
+func continueConversation(conversationId string, args []string, ollamaClient *ollamaclient.OllamaClient) {
+	conversation, err := db.GetConversation(conversationId)
+	if err != nil {
+		log.Fatalf("Failed to get conversation: %v", err)
+	}
+
+	if len(conversation.Messages) == 0 {
+		log.Fatalf("Conversation has no messages")
+	}
+
+	var messages []ollamaclient.Message
+
+	for _, message := range conversation.Messages {
+		messages = append(messages, ollamaclient.Message{
+			Role:    message.Role,
+			Content: message.Content,
+		})
+	}
+
+	prompt := strings.Join(args, " ")
+
+	response, err := ollamaClient.ChatCompletion(prompt, messages)
+	if err != nil {
+		log.Fatalf("Failed to get response: %v", err)
+	}
+
+	conversation.Messages = append(conversation.Messages, models.Message{Content: prompt, Role: "user"})
+	conversation.Messages = append(conversation.Messages, models.Message{Content: response, Role: "assistant"})
+
+	db.UpdateConversation(*conversation)
+
+	fmt.Println(response)
+}
+
+func startConversation(args []string, ollamaClient *ollamaclient.OllamaClient) {
+	prompt := strings.Join(args, " ")
+	response, err := ollamaClient.ChatCompletion(prompt, []ollamaclient.Message{})
+	if err != nil {
+		log.Fatalf("Failed to get response: %v", err)
+	}
+
+	db.CreateConversation(models.Conversation{
+		ID:       fmt.Sprintf("%x", sha256.Sum256([]byte(time.Now().String())))[:8],
+		Title:    prompt[:min(len(prompt), 20)],
+		Messages: []models.Message{{Content: prompt, Role: "user"}, {Content: response, Role: "assistant"}},
+	})
+
+	fmt.Println(response)
+}
+
 var chatCmd = &cobra.Command{
 	Use:   "chat",
 	Short: "Chat with Termpilot",
@@ -63,44 +113,15 @@ var chatCmd = &cobra.Command{
 			return
 		}
 
+		ollamaClient := ollamaclient.NewOllamaClient(baseUrl, model, port, version)
+
 		conversationId, err := cmd.Flags().GetString("continue")
 		if err != nil {
 			log.Fatalf("Failed to get continue: %v", err)
 		}
 
 		if conversationId != "" {
-			conversation, err := db.GetConversation(conversationId)
-			if err != nil {
-				log.Fatalf("Failed to get conversation: %v", err)
-			}
-
-			if len(conversation.Messages) == 0 {
-				log.Fatalf("Conversation has no messages")
-			}
-
-			var messages []ollamaclient.Message
-
-			for _, message := range conversation.Messages {
-				messages = append(messages, ollamaclient.Message{
-					Role:    message.Role,
-					Content: message.Content,
-				})
-			}
-
-			prompt := strings.Join(args, " ")
-
-			ollamaClient := ollamaclient.NewOllamaClient(baseUrl, model, port, version)
-			response, err := ollamaClient.ChatCompletion(prompt, messages)
-			if err != nil {
-				log.Fatalf("Failed to get response: %v", err)
-			}
-
-			conversation.Messages = append(conversation.Messages, models.Message{Content: prompt, Role: "user"})
-			conversation.Messages = append(conversation.Messages, models.Message{Content: response, Role: "assistant"})
-
-			db.UpdateConversation(*conversation)
-
-			fmt.Println(response)
+			continueConversation(conversationId, args, ollamaClient)
 			return
 		}
 
@@ -110,58 +131,16 @@ var chatCmd = &cobra.Command{
 		}
 
 		if continueLast {
-			conversationId, err := db.GetLastConversation()
+			conversation, err := db.GetLastConversation()
+
 			if err != nil {
-				log.Fatalf("Failed to get conversation: %v", err)
+				log.Fatalf("Failed to get last conversation: %v", err)
 			}
 
-			conversation, err := db.GetConversation(conversationId.ID)
-			if err != nil {
-				log.Fatalf("Failed to get conversation: %v", err)
-			}
-
-			var messages []ollamaclient.Message
-
-			for _, message := range conversation.Messages {
-				messages = append(messages, ollamaclient.Message{
-					Role:    message.Role,
-					Content: message.Content,
-				})
-			}
-
-			prompt := strings.Join(args, " ")
-
-			ollamaClient := ollamaclient.NewOllamaClient(baseUrl, model, port, version)
-			response, err := ollamaClient.ChatCompletion(prompt, messages)
-			if err != nil {
-				log.Fatalf("Failed to get response: %v", err)
-			}
-
-			conversation.Messages = append(conversation.Messages, models.Message{Content: prompt, Role: "user"})
-			conversation.Messages = append(conversation.Messages, models.Message{Content: response, Role: "assistant"})
-
-			db.UpdateConversation(*conversation)
-
-			fmt.Println(response)
+			continueConversation(conversation.ID, args, ollamaClient)
 			return
 		}
 
-		prompt := strings.Join(args, " ")
-
-		ollamaClient := ollamaclient.NewOllamaClient(baseUrl, model, port, version)
-		response, err := ollamaClient.ChatCompletion(prompt, []ollamaclient.Message{})
-		if err != nil {
-			log.Fatalf("Failed to get response: %v", err)
-		}
-
-		db.CreateConversation(models.Conversation{
-			ID:        fmt.Sprintf("%x", sha256.Sum256([]byte(time.Now().String())))[:8],
-			Title:     prompt[:min(len(prompt), 20)],
-			Messages:  []models.Message{{Content: prompt, Role: "user"}, {Content: response, Role: "assistant"}},
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		})
-
-		fmt.Println(response)
+		startConversation(args, ollamaClient)
 	},
 }
