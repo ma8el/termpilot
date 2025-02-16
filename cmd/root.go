@@ -6,6 +6,7 @@ import (
 	"os"
 	"termpilot/db"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -18,6 +19,11 @@ var (
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			if err := db.InitDB(); err != nil {
 				log.Fatalf("Failed to initialize database: %v", err)
+			}
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			if _, err := tea.NewProgram(initialModel()).Run(); err != nil {
+				log.Fatalf("Error running TUI: %v", err)
 			}
 		},
 	}
