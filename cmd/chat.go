@@ -114,6 +114,13 @@ func startConversation(args []string, ollamaClient *ollamaclient.OllamaClient) {
 	fmt.Print(fancyPrint(response))
 }
 
+func listAvailableModels(models []string) {
+	fmt.Println("Models:")
+	for i, model := range models {
+		fmt.Printf("  %d. %s\n", i+1, model)
+	}
+}
+
 var chatCmd = &cobra.Command{
 	Use:   "chat",
 	Short: "Chat with Termpilot",
@@ -164,7 +171,7 @@ var chatCmd = &cobra.Command{
 			if err != nil {
 				log.Fatalf("Failed to list models: %v", err)
 			}
-			fmt.Println(models)
+			listAvailableModels(models)
 			return
 		}
 
