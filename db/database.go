@@ -11,10 +11,12 @@ var DB *gorm.DB
 
 func InitDB() error {
 	var err error
-	DB, err = gorm.Open(sqlite.Open("termpilot.db"), &gorm.Config{})
+	DB, err = gorm.Open(sqlite.Open("termpilot.db?_foreign_keys=on"), &gorm.Config{})
 	if err != nil {
 		return err
 	}
+	// Explicitly enable foreign key constraints
+	DB.Exec("PRAGMA foreign_keys = ON")
 	DB.AutoMigrate(&models.Conversation{}, &models.Message{})
 	return nil
 }
@@ -50,7 +52,7 @@ func UpdateConversation(conversation models.Conversation) (*models.Conversation,
 }
 
 func DeleteConversation(id string) error {
-	if err := DB.Delete(&models.Conversation{}, id).Error; err != nil {
+	if err := DB.Delete(&models.Conversation{}, "id = ?", id).Error; err != nil {
 		return err
 	}
 	return nil

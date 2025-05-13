@@ -7,7 +7,7 @@ type Conversation struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Title     string
-	Messages  []Message `gorm:"foreignKey:ConversationID"`
+	Messages  []Message `gorm:"foreignKey:ConversationID;constraint:OnDelete:CASCADE;"`
 }
 
 type Message struct {
